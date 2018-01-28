@@ -14,7 +14,7 @@ services:
   app:
     build: .
     ports:
-      - 8090:${API_PORT} # Workflow
+      - 8090:8080 # Workflow
       - 8091:4001 # Arena
     environment:
       REDIS_PORT: ${REDIS_PORT}
@@ -23,7 +23,6 @@ services:
       QUEUE_NAME: global
       MONGO_HOST: mongodb
       MONGO_PORT: ${MONGO_PORT}
-      API_PORT: ${API_PORT}
     links:
       - redis
       - mongodb
