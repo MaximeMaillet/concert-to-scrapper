@@ -1,5 +1,5 @@
 name: 'Scrap'
-id: 'scrap'
+id: 'artist-scrap'
 
 stages:
   - worker_songkick:

@@ -1,26 +1,4 @@
-// const ScrappyServer = require('./ScrappyScrapper/index');
-//
-//
-// ScrappyServer([
-//   {
-//     interval: 500,
-//     baseUrl: 'https://www.songkick.com',
-//     worker: require('./src/workers/worker-songkick/index'),
-//     oneShot: true,
-//     ip_change: {
-//       os: 'osx',
-//       card: 'en0',
-//       current: 'LaGargouille',
-//       ips: [
-//         {'SSID': 'aux3maries_EXT', 'PASSWD':'aux3maries'},
-//         {'SSID': 'LaGargouille', 'PASSWD':'La_Gargouille{14}'}
-//       ]
-//     }
-//   }
-// ]);
-//
-// ScrappyServer.start();
-
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const Arena = require('bull-arena');
@@ -37,10 +15,6 @@ workflowManager.init({
   workflows_directory:`${__dirname}/src/workflows/workflows`,
 });
 
-workflowManager.register('scrap', [
-  {name: 'Senbeï'},
-]);
-
 const arena = Arena(
   {
     'queues': [{
@@ -55,4 +29,16 @@ const arena = Arena(
   }
 );
 router.use('/', arena);
+
+app.post('/hook/:entity/:object', (req, res) => {
+  try {
+    workflowManager.register(`${req.params.entity}-${req.params.object}`, req.body);
+    res.status(204).send();
+  } catch(err) {
+    res.status(500).send(err);
+  }
+});
+
+app.listen(process.env.API_PORT);
+
 

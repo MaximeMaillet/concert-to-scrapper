@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node src/test.js"
   },
   "keywords": [],
   "author": "",
@@ -14,10 +14,14 @@
     "body-parser": "^1.18.2",
     "bull-arena": "git+https://git@github.com/MaximeMaillet/arena.git#workflow",
     "bull-workflow-manager": "git@github.com:eoko/bull-workflow-manager.git",
+    "dotenv": "^4.0.0",
     "express": "^4.16.2",
-    "scrappy-scrapper": "^1.0.0"
+    "md5": "^2.2.1",
+    "mongoose": "^5.0.1",
+    "scrappy-scrapper": "^0.0.1"
   },
   "devDependencies": {
+    "debug": "^3.1.0",
     "eslint": "^4.16.0"
   }
 }
