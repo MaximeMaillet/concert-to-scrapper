@@ -1,0 +1,23 @@
+{
+  "name": "concert-to-scrapper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "bull-arena": "git+https://git@github.com/MaximeMaillet/arena.git#workflow",
+    "bull-workflow-manager": "git@github.com:eoko/bull-workflow-manager.git",
+    "express": "^4.16.2",
+    "scrappy-scrapper": "^1.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.16.0"
+  }
+}

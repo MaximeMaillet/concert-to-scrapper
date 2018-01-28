@@ -1,0 +1,6 @@
+name: 'Scrap'
+id: 'scrap'
+
+stages:
+  - worker_songkick:
+      job: songkick/index
