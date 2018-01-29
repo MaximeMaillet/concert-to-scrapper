@@ -7,6 +7,9 @@
     "start": "node index.js",
     "test": "node src/test.js"
   },
+  "engines": {
+    "node": ">=8.9.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -18,6 +21,7 @@
     "express": "^4.16.2",
     "md5": "^2.2.1",
     "mongoose": "^5.0.1",
+    "mysql": "github:mysqljs/mysql",
     "scrappy-scrapper": "^0.0.1"
   },
   "devDependencies": {

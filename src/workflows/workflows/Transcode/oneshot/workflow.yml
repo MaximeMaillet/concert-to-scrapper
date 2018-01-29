@@ -1,9 +1,7 @@
-name: 'Scrap'
-id: 'artist-scrap'
+name: 'Transcode'
+id: 'transcode-oneshot'
 
 stages:
-  - worker_songkick:
-      job: songkick/index
   - transcode:
       job: transcode/maria
       data:

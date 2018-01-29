@@ -1,10 +1,10 @@
-name: 'Scrap'
-id: 'artist-scrap'
+name: 'Transcode'
+id: 'transcode-cron'
 
 stages:
-  - worker_songkick:
-      job: songkick/index
   - transcode:
+      repeat:
+        cron: "0 * * * *"
       job: transcode/maria
       data:
         - host: '%mysql_host%'

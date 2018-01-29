@@ -30,6 +30,8 @@ const arena = Arena(
 );
 router.use('/', arena);
 
+workflowManager.register('transcode-cron', {});
+
 app.post('/hook/:entity/:object', (req, res) => {
   try {
     workflowManager.register(`${req.params.entity}-${req.params.object}`, req.body);
@@ -39,6 +41,7 @@ app.post('/hook/:entity/:object', (req, res) => {
   }
 });
 
+console.log(process.env.API_PORT);
 app.listen(process.env.API_PORT);
 
 

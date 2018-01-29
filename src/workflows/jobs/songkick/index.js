@@ -1,25 +1,13 @@
 require('dotenv').config();
 const ScrappyServer = require('../../../../ScrappyScrapper/index');
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 const md5 = require('md5');
-
-const eventSchema = new Schema({
-  hash: String,
-  name: String,
-  artist: String,
-  logoArtist: String,
-  address: String,
-  cp: Number,
-  city: String,
-  country: String,
-  location: {
-    lat: Number,
-    lng: Number,
-  },
-  startDate: Date
-});
-const Event = mongoose.model('Event', eventSchema);
+// const Schema = mongoose.Schema;
+// const EventModel = require('../../models/Event');
+//
+// const eventSchema = new Schema(EventModel);
+// const Event = mongoose.model('Event', eventSchema);
+const Event = require('../../models/Event');
 
 const worker = {
   scrapPattern: [/^\/artists\/.+/],
