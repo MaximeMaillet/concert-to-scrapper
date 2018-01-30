@@ -8,7 +8,6 @@ const app = express();
 const router = express.Router();
 app.use(bodyParser.json());
 
-
 workflowManager.init({
   parameters: `${__dirname}/src/workflows/parameters.yml`,
   jobs_directory:`${__dirname}/src/workflows/jobs`,
@@ -25,7 +24,7 @@ const arena = Arena(
     }]
   },
   {
-    'port': 4001
+    'port': process.env.ARENA_PORT
   }
 );
 router.use('/', arena);
@@ -41,7 +40,8 @@ app.post('/hook/:entity/:object', (req, res) => {
   }
 });
 
-console.log(process.env.API_PORT);
+console.log(`Api launch on ${process.env.API_PORT}`);
+console.log(`Arena launch on ${process.env.ARENA_PORT}`);
 app.listen(process.env.API_PORT);
 
 
