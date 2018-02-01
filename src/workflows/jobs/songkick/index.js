@@ -1,19 +1,10 @@
 require('dotenv').config();
 const ScrappyServer = require('../../../../ScrappyScrapper/index');
 const mongoose = require('mongoose');
-const md5 = require('md5');
-// const Schema = mongoose.Schema;
-// const EventModel = require('../../models/Event');
-//
-// const eventSchema = new Schema(EventModel);
-// const Event = mongoose.model('Event', eventSchema);
-const Event = require('../../models/Event');
 
-const worker = {
-  scrapPattern: [/^\/artists\/.+/],
-  isAlreadyScrapped,
-  start,
-};
+const Event = require('../../models/Event');
+const Url = require('../../models/Url');
+const worker = require('../../workers/songkick');
 
 module.exports = async(job) => {
   const {
@@ -26,7 +17,10 @@ module.exports = async(job) => {
       interval: 500,
       baseUrl: 'https://www.songkick.com',
       entrypoint: `https://www.songkick.com/search?query=${body.name}`,
-      worker: worker,
+      worker: {
+        scrapPattern: [/^\/artists\/.+/],
+        start,
+      },
       oneShot: true,
     }]);
 
@@ -34,60 +28,23 @@ module.exports = async(job) => {
   });
 };
 
-function isAlreadyScrapped(url) {
-  return Promise.reject();
-}
+async function start(url, $) {
 
-function start(url, $) {
-  const events = [];
-  let artist = {};
-  $('.microformat').each(function() {
-    const json = JSON.parse($(this).find('script').html());
-    json.forEach((value) => {
-      if (value['@type'] !== undefined) {
-        if (value['@type'] === 'MusicGroup') {
-          artist = checkArtist(value);
-        }
-        else if (value['@type'] === 'MusicEvent') {
-          events.push(checkEvent(value));
-        }
-      }
-    });
-  });
+  saveUrl(url);
 
-  for(const i in events) {
-    (new Event(Object.assign(events[i], artist))).save();
+  const artist = await worker($);
+
+  for(const i in artist.events) {
+    (new Event(Object.assign(artist.events[i], artist.name))).save();
   }
 }
 
-function generateHash(json) {
-  let hash = json.name+json.location.name+json.startDate;
-  hash = hash.replace(/'/g, '');
-  hash = hash.replace(/\s+/g, '');
-  hash = hash.toLowerCase();
-  return md5(hash);
-}
+async function saveUrl(_url) {
+  const url = await Url.findOne({
+    url: _url
+  }).exec();
 
-function checkEvent(value) {
-  const hash = generateHash(value);
-  return {
-    'hash': hash,
-    'name': value.location.name,
-    'address': value.location.address.streetAddress,
-    'cp': value.location.address.postalCode,
-    'city': value.location.address.addressLocality,
-    'country': value.location.address.addressCountry,
-    'location': {
-      lat: value.location.geo !== undefined ? value.location.geo.latitude : 0,
-      lng: value.location.geo !== undefined ? value.location.geo.longitude : 0
-    },
-    'startDate': value.startDate,
-  };
-}
-
-function checkArtist(value) {
-  return {
-    artist: value.name,
-    logoArtist: value.logo,
-  };
+  if(!url) {
+    new Url({url: _url, type:'artist', host: 'songkick'}).save();
+  }
 }

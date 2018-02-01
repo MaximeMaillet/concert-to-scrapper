@@ -1,0 +1,17 @@
+name: 'Scrap'
+id: 'autonomous-review'
+
+stages:
+  - review_songkick:
+      repeat:
+        cron: "0 0 * * *"
+      job: autonomous/alreadyScrapped
+  - transcode:
+    repeat:
+      cron: "0 1 * * *"
+    job: transcode/maria
+    data:
+      - host: '%mysql_host%'
+      - port: '%mysql_port%'
+      - user: '%mysql_user%'
+      - password: '%mysql_password%'
