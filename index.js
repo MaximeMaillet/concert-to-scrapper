@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const router = require('express-imp-router');
 const path = require('path');
@@ -11,4 +12,4 @@ router.route([{
   middlewares: `${path.resolve('.')}/src/middlewares`,
 }]);
 
-app.listen(8088);
+app.listen(process.env.API_PORT);

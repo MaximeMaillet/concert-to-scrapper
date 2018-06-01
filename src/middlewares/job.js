@@ -1,10 +1,15 @@
+require('dotenv').config();
 const Queue = require('bull');
 
 function service(req, res, next) {
 
-  const queueScrapping = new Queue('queue-scrapping', 'redis://127.0.0.1:6379');
+  const queueScrapping = new Queue('queue-scrapping', {
+    redis: {
+      port: process.env.REDIS_PORT,
+      host: process.env.REDIS_HOST
+    }
+  });
   const jobScrapping = [];
-// var audioQueue = new Queue('audio transcoding', {redis: {port: 6379, host: '127.0.0.1', password: 'foobared'}}); // Specify Redis connection using object
 
   const songkick = require('../jobs/scrap_songkick');
   queueScrapping.process(songkick.name, songkick.doJob);

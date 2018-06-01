@@ -10,6 +10,8 @@ services:
     build: .
     ports:
       - 8090:${API_PORT}
+    volumes:
+      - ./:/var/app
     links:
       - redis
     environment:
