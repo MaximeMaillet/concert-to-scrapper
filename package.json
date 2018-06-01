@@ -1,32 +1,31 @@
 {
   "name": "concert-to-scrapper",
   "version": "1.0.0",
-  "description": "",
+  "description": "Scrapper for Concerto",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "dev": "./node_modules/.bin/nodemon --config nodemon.json",
     "test": "node src/test.js"
   },
   "engines": {
     "node": ">=8.9.0"
   },
   "keywords": [],
-  "author": "",
+  "author": "Maxime Maillet <maxime.maillet93@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.18.2",
-    "bull-arena": "git+https://git@github.com/MaximeMaillet/arena.git#workflow",
-    "bull-workflow-manager": "git@github.com:eoko/bull-workflow-manager.git",
-    "dotenv": "^4.0.0",
-    "elasticsearch": "^14.0.0",
-    "express": "^4.16.2",
-    "md5": "^2.2.1",
-    "mongoose": "^5.0.1",
-    "mysql": "github:mysqljs/mysql",
-    "scrappy-scrapper": "^0.0.1"
+    "body-parser": "^1.18.3",
+    "bull": "^3.4.2",
+    "cheerio": "^1.0.0-rc.2",
+    "express": "^4.16.3",
+    "express-imp-router": "^0.1.6",
+    "moment": "^2.22.1",
+    "request": "^2.87.0"
   },
   "devDependencies": {
     "debug": "^3.1.0",
-    "eslint": "^4.16.0"
+    "eslint": "^4.16.0",
+    "nodemon": "^1.17.5"
   }
 }

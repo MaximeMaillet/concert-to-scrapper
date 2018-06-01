@@ -1,0 +1,13 @@
+{
+  "restartable": "rs",
+  "verbose": true,
+  "ignore": [".git/**", "node_modules/**", ".data/**"],
+  "watch": ["./index.js", "src/**"],
+  "env": {
+    "NODE_ENV": "development",
+    "DEBUG": "dTorrent*"
+  },
+  "execMap": {
+    "js": "~/.nvm/versions/node/v8.9.1/bin/node --harmony index.js"
+  }
+}

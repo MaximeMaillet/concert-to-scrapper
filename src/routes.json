@@ -1,0 +1,13 @@
+{
+  "_middlewares": [
+    {
+      "target": "init",
+      "action": ["body-parser#bodyParser", "body-parser#urlencoded", "job#service"]
+    }
+  ],
+  "/api": {
+    "/artists": {
+      "post": "ArtistController#post"
+    }
+  }
+}
