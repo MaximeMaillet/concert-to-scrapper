@@ -1,7 +1,7 @@
 {
   "restartable": "rs",
   "verbose": true,
-  "ignore": [".git/**", "node_modules/**", ".data/**"],
+  "ignore": [".git/**", "node_modules/**", ".data/**", "data/**"],
   "watch": ["./index.js", "src/**"],
   "env": {
     "NODE_ENV": "development",

@@ -17,12 +17,22 @@ async function doJob(job) {
 
   try {
 
+    console.log('Authentication');
+    await apiService.authenticate();
+
     console.log('Search for : '+name);
     const urls = await doSearch(name);
 
     if(urls.artists.length > 0) {
       for(let i=0; i<urls.artists.length; i++) {
         doArtist(urlCleaner.removeUtm(urls.artists[i]));
+        doEvent(urlCleaner.removeUtm(urls.artists[i]));
+      }
+    }
+
+    if(urls.events.length > 0) {
+      for(let i=0; i<urls.events.length; i++) {
+        doEvent(urlCleaner.removeUtm(urls.events[i]))
       }
     }
 
@@ -123,10 +133,31 @@ async function doArtist(url) {
       });
 
       if(result.length === 0) {
-        apiArtist(Object.assign(
-          dataScrapped.artist,
-          {events: dataScrapped.events}
-        ));
+        apiArtist(dataScrapped.artist);
+      }
+    }
+  } catch(e) {
+    throw e;
+  }
+}
+
+async function doEvent(url) {
+  try {
+    const toScrap = await mongoService.scrapFromEvent(url);
+    console.log('Event ('+url+') to scrap : '+toScrap);
+
+    if(toScrap) {
+      const dataScrapped = await getDataEvent(url);
+      mongoService.addScrap('event', url);
+
+      const result = await apiService.request('POST', '/searches/events', {
+        name: dataScrapped.name,
+        startDate: dataScrapped.startDate,
+        fromScrapper: true,
+      });
+
+      if(result.length === 0) {
+        apiEvents(dataScrapped);
       }
     }
   } catch(e) {
@@ -205,8 +236,51 @@ async function getDataScrap(url) {
   }
 }
 
+async function getDataEvent(url) {
+  try {
+    const scrapper = new Scrapper();
+    await scrapper.isExists(url);
+    const $ = await scrapper.get();
+    const dataScrap = {
+      name: null,
+      location: null,
+    };
+
+    $('.microformat').each(function() {
+      let json = JSON.parse($(this).find('script').html());
+      json.forEach(function (value) {
+        if (value['@type'] !== undefined && value['@type'] === 'MusicEvent') {
+          dataScrap.name = value['location'] ? value['location']['name'] : null;
+          dataScrap.url = value['url'];
+          dataScrap.startDate = value['startDate'];
+          dataScrap.description = value['description'];
+          dataScrap.location = {
+            name: value['location'] ? value['location']['name'] : null,
+            url: value['location'] ? value['location']['sameAs'] : null,
+            address: value['location'] && value['location']['address'] ? value['location']['address']['streetAddress'] : null,
+            postal_code: value['location'] && value['location']['address'] ? value['location']['address']['postalCode'] : null,
+            city: value['location'] && value['location']['address'] ? value['location']['address']['addressLocality'] : null,
+            country: value['location'] && value['location']['address'] ? value['location']['address']['addressCountry'] : null,
+            latitude: value['location'] && value['location']['geo'] ? value['location']['geo']['latitude'] : null,
+            longitude : value['location'] && value['location']['geo'] ? value['location']['geo']['longitude'] : null,
+          };
+        }
+      });
+    });
+
+    return dataScrap;
+
+  } catch(e) {
+    throw e;
+  }
+}
+
 async function apiArtist(data) {
   return apiService.request('PUT', '/artists', data);
+}
+
+async function apiEvents(data) {
+  return apiService.request('PUT', '/events', data);
 }
 
 function extractEvent(data) {

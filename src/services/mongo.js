@@ -41,6 +41,54 @@ async function scrapFromArtist(url) {
   });
 }
 
+async function scrapFromEvent(url) {
+  await mongoConnect();
+
+  return new Promise((resolve, reject) => {
+    Scrap.findOne({from: 'event', label: url}, (err, scrap) => {
+      if(err) {
+        reject(err);
+      } else {
+        if(scrap) {
+          const today = moment().subtract(1, 'days');
+          const scrappedDate = moment(scrap.scrapped_date);
+          if(today > scrappedDate) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        } else {
+          resolve(true);
+        }
+      }
+    });
+  });
+}
+
+async function scrapFromLocation(url) {
+  await mongoConnect();
+
+  return new Promise((resolve, reject) => {
+    Scrap.findOne({from: 'location', label: url}, (err, scrap) => {
+      if(err) {
+        reject(err);
+      } else {
+        if(scrap) {
+          const today = moment().subtract(1, 'days');
+          const scrappedDate = moment(scrap.scrapped_date);
+          if(today > scrappedDate) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        } else {
+          resolve(true);
+        }
+      }
+    });
+  });
+}
+
 async function addScrap(name, label) {
   try {
     const scrap = new Scrap({from: name, label: label, scrapped_date: new Date()});
@@ -53,4 +101,6 @@ async function addScrap(name, label) {
 module.exports = {
   addScrap,
   scrapFromArtist,
+  scrapFromEvent,
+  scrapFromLocation,
 };

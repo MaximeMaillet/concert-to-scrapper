@@ -3,6 +3,10 @@ const request = require('request');
 let token = null;
 
 function _request(method, url, data, headers) {
+  if(token === null) {
+    return new Promise.reject('No authentication');
+  }
+
   return new Promise((resolve, reject) => {
     const _headers = Object.assign({
       'Authorization': `Bearer ${token}`,
@@ -18,28 +22,10 @@ function _request(method, url, data, headers) {
 
     function callback(error, response, body) {
       if (error || response.statusCode !== 200) {
-        if(!error && response.statusCode === 401) {
-          authenticate()
-            .then((body) => {
-              token = body.token;
-              _request(method, url, data, headers)
-                .then((body) => {
-                  resolve(body);
-                });
-            })
-            .catch((err) => {
-              console.log('err auth');
-            })
-          ;
-        } else {
-          if(error) {
-            console.log(error);
-          } else {
-            console.log(response.statusCode);
-            console.log(response.body);
-          }
-          reject();
+        if(error) {
+          console.log(error);
         }
+        reject(response.body);
       } else {
         resolve(JSON.parse(body));
       }
@@ -67,7 +53,9 @@ function authenticate() {
       if (error || response.statusCode !== 200) {
         reject();
       } else {
-        resolve(JSON.parse(body));
+        const response = JSON.parse(body);
+        token = response.token;
+        resolve(response);
       }
     }
 
@@ -76,5 +64,6 @@ function authenticate() {
 }
 
 module.exports = {
-  request: _request
+  request: _request,
+  authenticate,
 };

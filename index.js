@@ -6,6 +6,8 @@ const path = require('path');
 const app = express();
 router(app);
 
+// process.setMaxListeners(5);
+
 router.route([{
   routes: `${path.resolve('.')}/src/routes.json`,
   controllers: `${path.resolve('.')}/src/controllers`,
