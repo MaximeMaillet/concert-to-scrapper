@@ -8,6 +8,6 @@
     "DEBUG": "dTorrent*"
   },
   "execMap": {
-    "js": "~/.nvm/versions/node/v8.9.1/bin/node --harmony index.js"
+    "js": "~/.nvm/versions/node/v8.9.1/bin/node --harmony index.js -v"
   }
 }

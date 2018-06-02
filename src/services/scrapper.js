@@ -48,32 +48,3 @@ module.exports = function() {
     return this.cache_html;
   }
 };
-
-// module.exports = async (url) => {
-//   //https://www.songkick.com/search?utf8=%E2%9C%93&type=initial&query=degiheugi
-//   const url2 = 'https://www.songkick.com/artists/908564-degiheugi';
-//   request(url2, (error, response, html) => {
-//
-//     // First we'll check to make sure no errors occurred when making the request
-//
-//     if(!error){
-//       // Next, we'll utilize the cheerio library on the returned html which will essentially give us jQuery functionality
-//
-//       var $ = cheerio.load(html);
-//       $('.microformat').each(function() {
-//         let json = JSON.parse($(this).find('script').html());
-//         console.log(json);
-//         // json.forEach(function (value) {
-//         //   if (value['@type'] !== undefined) {
-//         //     if(value['@type'] === 'MusicGroup') {
-//         //       Object.assign(data,checkArtist(value));
-//         //     }
-//         //     else if(value['@type'] === 'MusicEvent') {
-//         //       console.log(value);
-//         //     }
-//         //   }
-//         // });
-//       });
-//     }
-//   })
-// };

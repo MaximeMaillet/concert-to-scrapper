@@ -4,19 +4,58 @@ const baseUrl = 'https://www.songkick.com';
 const apiService = require('../services/concertoApi');
 const moment = require('moment');
 const urlCleaner = require('../services/urlCleaner');
+const mongoService = require('../services/mongo');
 
 async function doJob(job) {
-  console.log('ok');
+  console.log('SongKick job');
   const {
-    name,
+    artist: {
+      name,
+    },
     events,
   } = job.data;
 
   try {
-    const url = await doSearch(name);
 
-    const data = await doArtist(urlCleaner.removeUtm(url));
-    const artist = await apiArtist(Object.assign(data.artist, {events: data.events}));
+    console.log('Search for : '+name);
+    const urls = await doSearch(name);
+
+    if(urls.artists.length > 0) {
+      for(let i=0; i<urls.artists.length; i++) {
+        doArtist(urlCleaner.removeUtm(urls.artists[i]));
+      }
+    }
+
+    // const toScrap = await mongoService.scrapFromArtist(name);
+    // console.log('Scrap ? '+toScrap);
+    // job.progress(10);
+    //
+    // if(toScrap) {
+    //   job.progress(20);
+    //
+    //
+    //   console.log(urls);
+    //
+    //   if(urls && urls.artists) {
+    //     job.progress(30);
+    //     for(let i=0; i<urls.artists.length; i++) {
+    //       doArtist(name, urlCleaner.removeUtm(urls.artists[i]));
+    //     }
+    //   }
+    //
+    //   if(urls && urls.locations) {
+    //     job.progress(40);
+    //     //
+    //   }
+    //
+    //   if(urls && urls.events) {
+    //     job.progress(50);
+    //     //
+    //   }
+    // }
+
+
+    // const artist = await apiArtist(Object.assign(data.artist, {events: data.events}));
 
   } catch(e) {
     console.log('DAMN !');
@@ -26,26 +65,77 @@ async function doJob(job) {
 
 /**
  * Return url for artist profile
- * @return {Promise.<void>}
+ * @return {Promise.<{}>}
  * @param name
  */
 async function doSearch(name) {
   try {
     const scrapper = new Scrapper();
     await scrapper.isExists(`${baseUrl}/search?query=${name}`);
-    console.log('isExists');
 
     const scr = await scrapper.get();
-    return `${baseUrl}${scr('li.artist').find('a').attr('href')}`;
+    const urls = {
+      artists: [],
+      events: [],
+      locations: [],
+    };
+
+    scr('li.artist a.thumb').each((index, value) => {
+      urls.artists.push(baseUrl+scr(value).attr('href'));
+    });
+
+    scr('li.venue a.thumb').each((index, value) => {
+      urls.locations.push(baseUrl+scr(value).attr('href'));
+    });
+
+    scr('li.concert a.thumb').each((index, value) => {
+      urls.events.push(baseUrl+scr(value).attr('href'));
+    });
+
+    scr('li.event a.thumb').each((index, value) => {
+      urls.events.push(baseUrl+scr(value).attr('href'));
+    });
+
+    return urls;
 
   } catch(e) {
     throw e;
   }
 }
 
+/**
+ * Save artists if not exists
+ * @param url
+ * @return {Promise.<void>}
+ */
 async function doArtist(url) {
   try {
+    const toScrap = await mongoService.scrapFromArtist(url);
+    console.log('Artist ('+url+') to scrap : '+toScrap);
 
+    if(toScrap) {
+      const dataScrapped = await getDataArtist(url);
+      mongoService.addScrap('artist', url);
+
+      const result = await apiService.request('POST', '/searches/artists', {
+        exactName: dataScrapped.artist.name,
+        fromScrapper: true,
+      });
+
+      if(result.length === 0) {
+        apiArtist(Object.assign(
+          dataScrapped.artist,
+          {events: dataScrapped.events}
+        ));
+      }
+    }
+  } catch(e) {
+    throw e;
+  }
+}
+
+async function getDataArtist(url) {
+  try {
     const dataScrap = await getDataScrap(url);
 
     const dataReturn = {
@@ -78,10 +168,45 @@ async function doArtist(url) {
     }
 
     return dataReturn;
+  } catch(e) {
+    throw e;
+  }
+}
+
+async function getDataScrap(url) {
+  try {
+    const scrapper = new Scrapper();
+    await scrapper.isExists(url);
+
+    const $ = await scrapper.get();
+    const dataScrap = {
+      artist: null,
+      events: [],
+    };
+
+    $('.microformat').each(function() {
+      let json = JSON.parse($(this).find('script').html());
+      json.forEach(function (value) {
+        if (value['@type'] !== undefined) {
+          if(value['@type'] === 'MusicGroup') {
+            dataScrap.artist = value;
+          }
+          else if(value['@type'] === 'MusicEvent') {
+            dataScrap.events.push(value);
+          }
+        }
+      });
+    });
+
+    return dataScrap;
 
   } catch(e) {
     throw e;
   }
+}
+
+async function apiArtist(data) {
+  return apiService.request('PUT', '/artists', data);
 }
 
 function extractEvent(data) {
@@ -120,42 +245,6 @@ function extractEvent(data) {
   }
 
   return dataReturn;
-}
-
-async function getDataScrap(url) {
-  try {
-    const scrapper = new Scrapper();
-    await scrapper.isExists(url);
-
-    const $ = await scrapper.get();
-    const dataScrap = {
-      artist: null,
-      events: [],
-    };
-
-    $('.microformat').each(function() {
-      let json = JSON.parse($(this).find('script').html());
-      json.forEach(function (value) {
-        if (value['@type'] !== undefined) {
-          if(value['@type'] === 'MusicGroup') {
-            dataScrap.artist = value;
-          }
-          else if(value['@type'] === 'MusicEvent') {
-            dataScrap.events.push(value);
-          }
-        }
-      });
-    });
-
-    return dataScrap;
-
-  } catch(e) {
-    throw e;
-  }
-}
-
-async function apiArtist(data) {
-  return apiService.request('PUT', '/artists', data);
 }
 
 module.exports = {

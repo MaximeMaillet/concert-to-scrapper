@@ -13,3 +13,4 @@ router.route([{
 }]);
 
 app.listen(process.env.API_PORT);
+console.log(`API started at port ${process.env.API_PORT}`);
