@@ -14,7 +14,7 @@ module.exports = function() {
           self.cache_html = html;
           resolve();
         } else {
-          reject(error)
+          reject(error);
         }
       });
     });
