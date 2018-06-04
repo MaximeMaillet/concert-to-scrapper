@@ -5,6 +5,8 @@ const apiService = require('../services/concertoApi');
 const moment = require('moment');
 const urlCleaner = require('../services/urlCleaner');
 const mongoService = require('../services/mongo');
+const eventService = require('../services/event');
+const artistService = require('../services/artist');
 
 async function doJob(job) {
   console.log('SongKick job');
@@ -26,7 +28,7 @@ async function doJob(job) {
     if(urls.artists.length > 0) {
       for(let i=0; i<urls.artists.length; i++) {
         doArtist(urlCleaner.removeUtm(urls.artists[i]));
-        doEvent(urlCleaner.removeUtm(urls.artists[i]));
+        doEvent(urlCleaner.removeUtm(urls.artists[i]))
       }
     }
 
@@ -114,7 +116,7 @@ async function doSearch(name) {
 }
 
 /**
- * Save artists if not exists
+ * Find artist and save his
  * @param url
  * @return {Promise.<void>}
  */
@@ -128,12 +130,13 @@ async function doArtist(url) {
       mongoService.addScrap('artist', url);
 
       const result = await apiService.request('POST', '/searches/artists', {
-        exactName: dataScrapped.artist.name,
+        name: dataScrapped.artist.name,
         fromScrapper: true,
       });
 
-      if(result.length === 0) {
-        apiArtist(dataScrapped.artist);
+      if(result.results.length === 0) {
+        doEvent(urlCleaner.removeUtm(url));
+        artistService.make(dataScrapped.artist);
       }
     }
   } catch(e) {
@@ -141,6 +144,11 @@ async function doArtist(url) {
   }
 }
 
+/**
+ * Find events and save them
+ * @param url
+ * @return {Promise.<Array>}
+ */
 async function doEvent(url) {
   try {
     const toScrap = await mongoService.scrapFromEvent(url);
@@ -150,15 +158,15 @@ async function doEvent(url) {
       const dataScrapped = await getDataEvent(url);
       mongoService.addScrap('event', url);
 
-      const result = await apiService.request('POST', '/searches/events', {
-        name: dataScrapped.name,
-        startDate: dataScrapped.startDate,
-        fromScrapper: true,
-      });
-
-      if(result.length === 0) {
-        apiEvents(dataScrapped);
+      const events = [];
+      for(let i=0; i<dataScrapped.length;i++) {
+        const event = await eventService.make(dataScrapped[i]);
+        if(event) {
+          events.push(event);
+        }
       }
+
+      return events;
     }
   } catch(e) {
     throw e;
@@ -241,29 +249,33 @@ async function getDataEvent(url) {
     const scrapper = new Scrapper();
     await scrapper.isExists(url);
     const $ = await scrapper.get();
-    const dataScrap = {
-      name: null,
-      location: null,
-    };
+    const dataScrap = []
 
     $('.microformat').each(function() {
       let json = JSON.parse($(this).find('script').html());
       json.forEach(function (value) {
         if (value['@type'] !== undefined && value['@type'] === 'MusicEvent') {
-          dataScrap.name = value['location'] ? value['location']['name'] : null;
-          dataScrap.url = value['url'];
-          dataScrap.startDate = value['startDate'];
-          dataScrap.description = value['description'];
-          dataScrap.location = {
-            name: value['location'] ? value['location']['name'] : null,
-            url: value['location'] ? value['location']['sameAs'] : null,
-            address: value['location'] && value['location']['address'] ? value['location']['address']['streetAddress'] : null,
-            postal_code: value['location'] && value['location']['address'] ? value['location']['address']['postalCode'] : null,
-            city: value['location'] && value['location']['address'] ? value['location']['address']['addressLocality'] : null,
-            country: value['location'] && value['location']['address'] ? value['location']['address']['addressCountry'] : null,
-            latitude: value['location'] && value['location']['geo'] ? value['location']['geo']['latitude'] : null,
-            longitude : value['location'] && value['location']['geo'] ? value['location']['geo']['longitude'] : null,
-          };
+          if(value['location'] && value['location']['geo']) {
+            const data = {
+              name: value['location'] ? value['location']['name'] : null,
+              url: value['url'],
+              startDate: value['startDate'],
+              description: value['description'],
+              artists: value['performer'] ? value['performer'].map((val) => ({name: val.name})) : null,
+              location: {
+                name: value['location'] ? value['location']['name'] : null,
+                url: value['location'] ? value['location']['sameAs'] : null,
+                address: value['location'] && value['location']['address'] ? value['location']['address']['streetAddress'] : null,
+                postal_code: value['location'] && value['location']['address'] ? value['location']['address']['postalCode'] : null,
+                city: value['location'] && value['location']['address'] ? value['location']['address']['addressLocality'] : null,
+                country: value['location'] && value['location']['address'] ? value['location']['address']['addressCountry'] : null,
+                latitude: value['location'] && value['location']['geo'] ? value['location']['geo']['latitude'] : null,
+                longitude: value['location'] && value['location']['geo'] ? value['location']['geo']['longitude'] : null,
+              }
+            };
+
+            dataScrap.push(data);
+          }
         }
       });
     });
@@ -275,12 +287,41 @@ async function getDataEvent(url) {
   }
 }
 
+async function makeEvent(dataScrapped) {
+  dataScrapped.location = (await getLocationFromScrapped(dataScrapped)).id;
+  return apiEvents(dataScrapped);
+}
+
+async function getLocationFromScrapped(dataScrapped) {
+  const result = await apiService.request('POST', '/searches/locations', {
+    name: dataScrapped.name,
+    address: dataScrapped.location.address,
+    city: dataScrapped.location.city,
+    country: dataScrapped.location.country,
+    postal_code: dataScrapped.location.postal_code,
+    longitude: dataScrapped.location.longitude,
+    latitude: dataScrapped.location.latitude,
+    startDate: dataScrapped.startDate,
+    fromScrapper: true,
+  });
+
+  if(result.results.length === 0) {
+    return apiLocation(dataScrapped);
+  } else {
+    return result.results[0];
+  }
+}
+
 async function apiArtist(data) {
   return apiService.request('PUT', '/artists', data);
 }
 
 async function apiEvents(data) {
   return apiService.request('PUT', '/events', data);
+}
+
+async function apiLocation(data) {
+  return apiService.request('PUT', '/locations', data.location);
 }
 
 function extractEvent(data) {
