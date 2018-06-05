@@ -28,15 +28,17 @@ module.exports = async(job) => {
     if(urls.artists && urls.artists.length > 0) {
       for(let i=0; i<urls.artists.length; i++) {
         const artist = await scrapper.doArtist(urlCleaner.removeUtm(urls.artists[i]));
-        const artistExists = await artistService.isExists(artist);
+        if(artist) {
+          const artistExists = await artistService.isExists(artist);
 
-        if(!artistExists) {
-          await artistService.create(artist);
-        }
+          if(!artistExists) {
+            await artistService.create(artist);
+          }
 
-        const events = await scrapper.doEvent(urlCleaner.removeUtm(urls.artists[i]));
-        for(let i=0; i<events.length; i++) {
-          eventService.make(events[i]);
+          const events = await scrapper.doEvent(urlCleaner.removeUtm(urls.artists[i]));
+          for(let i=0; i<events.length; i++) {
+            eventService.make(events[i]);
+          }
         }
       }
     }

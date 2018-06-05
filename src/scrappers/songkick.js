@@ -36,13 +36,13 @@ async function doSearch(name) {
 async function doArtist(url) {
   const toScrap = await mongoService.scrapFromArtist(url);
   console.log('Artist ('+url+') to scrap : '+toScrap);
+  let dataScrap = null;
 
   if(toScrap) {
     const scrapper = new Scrapper();
     await scrapper.isExists(url);
     const $ = await scrapper.get();
     mongoService.addScrap('artist', url);
-    let dataScrap = {};
 
     $('.microformat').each((index, value) => {
       let json = JSON.parse($(value).find('script').html());
@@ -105,9 +105,9 @@ async function doEvent(url) {
         }
       });
     });
-
-    return events;
   }
+
+  return events;
 }
 
 module.exports = {
