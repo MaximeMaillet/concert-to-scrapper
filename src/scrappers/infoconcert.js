@@ -52,50 +52,57 @@ async function doArtist(url) {
         logo: $('.single-intro .affiche').find('img').attr('src'),
       };
     }
+
+    return null;
   } catch(e) {
     throw e;
   }
 }
 
 async function doEvent(url) {
-  const scrapper = new Scrapper();
-  await scrapper.isExists(url);
-
-  const $ = await scrapper.get();
-  const cpRegex = /(([0-8][0-9])|(9[0-5]))[0-9]{3}/;
+  const toScrap = await mongoService.scrapFromEvent(url);
   const events = [];
-  const dataScrap = {
-    url: baseUrl+url,
-    location: {
-      name: $('h1[itemprop=name]').text(),
-      address: $('.single-intro .adr .street-address').text(),
-      postal_code: $('.single-intro .adr').text().match(cpRegex) ? $('.single-intro .adr').text().match(cpRegex)[0] : null,
-      city: $('.single-intro .adr .locality').text(),
-      country: '',
-      latitude: $('.geo .latitude .value-title').attr('title'),
-      longitude: $('.geo .longitude .value-title').attr('title'),
-    }
-  };
 
-  $('.date-line').each((index, value) => {
-    const artists = [];
-    $(value).find('.spectacle a').each((index, value) => {
-      artists.push({name: $(value).text().toLowerCase()});
+  if(toScrap) {
+    mongoService.addScrap('event', url);
+    const scrapper = new Scrapper();
+    await scrapper.isExists(url);
+
+    const $ = await scrapper.get();
+    const cpRegex = /(([0-8][0-9])|(9[0-5]))[0-9]{3}/;
+    const dataScrap = {
+      url: baseUrl+url,
+      location: {
+        name: $('h1[itemprop=name]').text(),
+        address: $('.single-intro .adr .street-address').text(),
+        postal_code: $('.single-intro .adr').text().match(cpRegex) ? $('.single-intro .adr').text().match(cpRegex)[0] : null,
+        city: $('.single-intro .adr .locality').text(),
+        country: '',
+        latitude: $('.geo .latitude .value-title').attr('title'),
+        longitude: $('.geo .longitude .value-title').attr('title'),
+      }
+    };
+
+    $('.date-line').each((index, value) => {
+      const artists = [];
+      $(value).find('.spectacle a').each((index, value) => {
+        artists.push({name: $(value).text().toLowerCase()});
+      });
+      events.push({
+        name: $(value).find('.festival-associe a').text() ? $('.festival-associe a').text() : $('h1[itemprop=name]').text(),
+        url: dataScrap.url,
+        location: dataScrap.location,
+        startDate: $(value).find('time').attr('datetime'),
+        artists: artists,
+      });
     });
-    events.push({
-      name: $(value).find('.festival-associe a').text() ? $('.festival-associe a').text() : $('h1[itemprop=name]').text(),
-      url: dataScrap.url,
-      location: dataScrap.location,
-      startDate: $(value).find('time').attr('datetime'),
-      artists: artists,
-    });
-  });
+  }
 
   return events;
 }
 
 module.exports = {
-  enable: false,
+  enable: true,
   baseUrl,
   doSearch,
   doArtist,

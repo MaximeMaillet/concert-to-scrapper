@@ -24,8 +24,10 @@ function _request(method, url, data, headers) {
       if (error || response.statusCode !== 200) {
         if(error) {
           console.log(error);
+          reject(error);
+        } else {
+          reject(response.body);
         }
-        reject(response.body);
       } else {
         resolve(JSON.parse(body));
       }

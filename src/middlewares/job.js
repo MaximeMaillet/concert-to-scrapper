@@ -19,10 +19,14 @@ function service(req, res, next) {
     scrap: (data) => {
       fs.readdir(`${path.resolve('.')}/src/scrappers`, (err, files) => {
         files.forEach(file => {
-          queueScrapping.add('scrapper', {
-            data: data,
-            job: `${path.resolve('.')}/src/scrappers/${file}`,
-          });
+          queueScrapping.add(
+            'scrapper',
+            5,
+            {
+              data: data,
+              job: `${path.resolve('.')}/src/scrappers/${file}`,
+            }
+          );
         });
       });
     }
