@@ -111,6 +111,7 @@ async function doEvent(url) {
 }
 
 module.exports = {
+  enable: true,
   baseUrl,
   doSearch,
   doArtist,

@@ -12,6 +12,10 @@ module.exports = async(job) => {
 
   try {
     const scrapper = require(scrapperInterface);
+    if(!scrapper.enable) {
+      return Promise.resolve(`Scrapper ${scrapperInterface} is disabled`);
+    }
+
     console.log(`Start scrap : ${scrapper.baseUrl} for ${name}`);
 
     console.log('Authentication');
@@ -46,7 +50,7 @@ module.exports = async(job) => {
       }
     }
 
-    return Promise.resolve('ok');
+    return Promise.resolve('Job done');
   } catch(e) {
     console.log('DAMN !');
     console.log(e);
