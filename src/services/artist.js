@@ -1,27 +1,39 @@
 const apiService = require('./concertoApi');
 
-async function make(artist) {
+async function isExists(artist) {
   const result = await apiService.request('POST', '/searches/artists', {
     name: artist.name,
     fromScrapper: true,
   });
 
   if(result.results.length > 0) {
-    const allEvents = result.results[0].events.map((val) => val.id).concat(artist.events);
-    const mergedData = (Object.assign(result.results[0], artist));
-    mergedData.events = dedupeEvents(allEvents);
-    return apiService.request('PATCH', `/artists/${result.results[0].id}`, mergedData);
+    return result.results[0];
   } else {
-    return apiService.request('PUT', '/artists', artist);
+    return null;
   }
 }
 
-function dedupeEvents(events) {
-  return events.filter((elem, pos, arr) => {
-      return arr.indexOf(elem) == pos;
-  });
+async function create(artist) {
+  try {
+    const art = await apiService.request('PUT', '/artists', artist);
+    console.log(`Artist created : ${art.name} (${art.id})`);
+  } catch(e) {
+    console.log('Artist created failed');
+    console.log(e);
+  }
+}
+
+async function putEvent(artist, event) {
+  try {
+    await apiService.request('PUT', `/artists/${artist.id}/events/${event.id}`);
+    console.log(`Event putted : ${artist.name} (${artist.id}) < ${event.name} (${event.id})`);
+  } catch(e) {
+
+  }
 }
 
 module.exports = {
-  make,
+  create,
+  putEvent,
+  isExists,
 };

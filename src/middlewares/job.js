@@ -1,5 +1,7 @@
 require('dotenv').config();
 const Queue = require('bull');
+const path = require('path');
+const fs = require('fs');
 
 function service(req, res, next) {
 
@@ -9,17 +11,20 @@ function service(req, res, next) {
       host: process.env.REDIS_HOST
     }
   });
-  const jobScrapping = [];
 
-  const songkick = require('../jobs/scrap_songkick');
-  queueScrapping.process(songkick.name, songkick.doJob);
-  jobScrapping.push(songkick.name);
+  const scrapper = require('../jobs/scrapper');
+  queueScrapping.process('scrapper', scrapper);
 
   req.jobs = {
     scrap: (data) => {
-      for(let i=0; i<jobScrapping.length; i++) {
-        queueScrapping.add(jobScrapping[i], data);
-      }
+      fs.readdir(`${path.resolve('.')}/src/scrappers`, (err, files) => {
+        files.forEach(file => {
+          queueScrapping.add('scrapper', {
+            data: data,
+            job: `${path.resolve('.')}/src/scrappers/${file}`,
+          });
+        });
+      });
     }
   };
 

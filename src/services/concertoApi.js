@@ -51,7 +51,7 @@ function authenticate() {
 
     function callback(error, response, body) {
       if (error || response.statusCode !== 200) {
-        reject();
+        reject(error);
       } else {
         const response = JSON.parse(body);
         token = response.token;

@@ -2,57 +2,77 @@ const apiService = require('./concertoApi');
 const artistService = require('./artist');
 const locationService = require('./location');
 
+/**
+ * @param event
+ * @return {Promise.<null>}
+ */
 async function isExists(event) {
   const result = await apiService.request('POST', '/searches/events', {
     name: event.name,
-    fromScrapper: true,
+    fromScrapper: true, //@todo remove
   });
 
-  return result.results.length > 0;
+  if(result.results.length > 0) {
+    return result.results[0];
+  } else {
+    return null;
+  }
 }
 
-async function make(data) {
-  let event = {};
-  data.location = await locationService.make(data);
-  if(!data.location) {
+/**
+ * Make an event
+ * @return {Promise.<null>}
+ * @param dataEvent
+ */
+async function make(dataEvent) {
+  if(!dataEvent || !dataEvent.name || !dataEvent.startDate) {
+    return null;
+  }
+
+  const location = await locationService.make(dataEvent);
+
+  if(!location) {
     return null;
   } else {
-    data.location = data.location.id;
+    dataEvent.location = location.id;
   }
 
-  const result = await apiService.request('POST', '/searches/events', {
-    name: data.name,
-    fromScrapper: true,
-  });
+  const event = await isExists(dataEvent);
+  let eventStored = {};
 
-  if(result.pagination.totalCount === 0) {
-    event = await apiService.request('PUT', '/events', data);
-    console.log('put event : '+event.id);
+  if(event) {
+    eventStored = await apiService.request('PATCH', `/events/${event.id}`, dataEvent);
+    console.log(`Event updated : ${eventStored.name} (${eventStored.id})`);
   } else {
-    event = await apiService.request('PATCH', `/events/${result.results[0].id}`, data);
-    console.log('patch event : ' +event.id);
+    eventStored = await apiService.request('PUT', '/events', dataEvent);
+    console.log(`Event created : ${eventStored.name} (${eventStored.id})`);
   }
 
-  return createArtist(event, data);
+  putArtists(eventStored, dataEvent.artists);
 }
 
-async function createArtist(event, data) {
-  if(data.artists) {
-    event.artists = [];
-    for(let i=0; i<data.artists.length; i++) {
-      const dataArtist = data.artists[i];
-      dataArtist.events = [
-        event.id
-      ];
-      event.artists.push((await artistService.make(dataArtist)));
+/**
+ * Add event to artists
+ * @param event : existing event
+ * @param artists
+ * @return {Promise.<void>}
+ */
+async function putArtists(event, artists) {
+  if(artists && artists.length > 0) {
+    for(let i=0; i<artists.length; i++) {
+      const dataArtist = await artistService.isExists(artists[i]);
+
+      if(dataArtist) {
+        artistService.putEvent(dataArtist, event);
+      } else {
+        artists[i].events = [event.id];
+        artistService.create(artists[i]);
+      }
     }
   }
-
-  return event;
 }
 
 module.exports = {
   isExists,
-  createArtist,
   make,
 };

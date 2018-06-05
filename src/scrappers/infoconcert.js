@@ -41,34 +41,16 @@ async function doArtist(url) {
     if(toScrap) {
       const scrapper = new Scrapper();
       await scrapper.isExists(url);
-      // @todo
-      // mongoService.addScrap('artist', url);
+      mongoService.addScrap('artist', url);
 
       const $ = await scrapper.get();
-      const dataScrap = {
-        artist: {},
-        events: [],
+
+      return {
+        name: $('h1[itemprop=name]').text(),
+        type: $('.single-intro-top .genre').find('a').text(),
+        popularity: $('span[itemprop=ratingCount]').text() | 0,
+        logo: $('.single-intro .affiche').find('img').attr('src'),
       };
-
-      dataScrap.artist.name = $('h1[itemprop=name]').text();
-      dataScrap.artist.type = $('.single-intro-top .genre').find('a').text();
-      dataScrap.artist.popularity = $('span[itemprop=ratingCount]').text() | 0;
-      dataScrap.artist.logo = $('.single-intro .affiche').find('img').attr('src');
-
-      // @todo : pas assez d'infos pour le moment
-      // $('.date-line').each((index, value) => {
-      //   dataScrap.events.push({
-      //     name: $(value).find('span[itemprop=name]').text(),
-      //     startDate: $(value).find('time').attr('datetime'),
-      //     url: '',
-      //     location: {
-      //       name: $(value).find('span[itemprop=name]').text(),
-      //       city: $(value).find('span[itemprop=locality]').text(),
-      //     }
-      //   });
-      // });
-
-      return dataScrap;
     }
   } catch(e) {
     throw e;
@@ -87,7 +69,7 @@ async function doEvent(url) {
     location: {
       name: $('h1[itemprop=name]').text(),
       address: $('.single-intro .adr .street-address').text(),
-      postal_code: $('.single-intro .adr').text().match(cpRegex)[0],
+      postal_code: $('.single-intro .adr').text().match(cpRegex) ? $('.single-intro .adr').text().match(cpRegex)[0] : null,
       city: $('.single-intro .adr .locality').text(),
       country: '',
       latitude: $('.geo .latitude .value-title').attr('title'),
@@ -98,7 +80,7 @@ async function doEvent(url) {
   $('.date-line').each((index, value) => {
     const artists = [];
     $(value).find('.spectacle a').each((index, value) => {
-      artists.push($(value).text().toLowerCase());
+      artists.push({name: $(value).text().toLowerCase()});
     });
     events.push({
       name: $(value).find('.festival-associe a').text() ? $('.festival-associe a').text() : $('h1[itemprop=name]').text(),
